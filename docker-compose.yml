@@ -1,51 +1,69 @@
 version: "3.8"
+# https://github.com/Kludex/fastapi-prometheus-grafana
 
-networks:
-  example-network:
-    name: example-network
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.16.238.0/24
+volumes:
+  prometheus-data:
+  grafana-data:
+
 
 services:
   app:
-    build: src/monitoring_with_prometheus
-    restart: unless-stopped
     container_name: app
+    env_file:
+      - ./src/monitoring_with_prometheus/variables_docker.env
+    build:
+      context: ./src/monitoring_with_prometheus
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/monitoring_with_prometheus:/app
     ports:
-      - 8090:5000
-    networks:
-      example-network:
-        ipv4_address: 172.16.238.10
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   restart: unless-stopped
-  #   container_name: prometheus
-  #   ports:
-  #     - 9090:9090
-  #   volumes:
-  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
-  #   command:
-  #     - "--config.file=/etc/prometheus/prometheus.yml"
-  #   networks:
-  #     example-network:
-  #       ipv4_address: 172.16.238.11
+      - 5050:8082
+    restart: unless-stopped
+    # networks:
+    #   example-network:
+    #     ipv4_address: 172.16.238.10
 
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   restart: unless-stopped
-  #   user: "472"
-  #   container_name: grafana
-  #   depends_on:
-  #     - prometheus
-  #   ports:
-  #     - 3000:3000
-  #   volumes:
-  #     - ./datasource.yml:/etc/grafana/provisioning/datasource.yml
-  #   env_file:
-  #     - ./config.monitoring
-  #   networks:
-  #     example-network:
-  #       ipv4_address: 172.16.238.12
+  prometheus:
+    container_name: prometheus
+    env_file:
+      - ./src/prometheus/variables_docker.env
+    image: prom/prometheus:latest
+    volumes:
+      - ./src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    # networks:
+    #   example-network:
+    #     ipv4_address: 172.16.238.11
+
+  grafana:
+    container_name: grafana
+    env_file:
+      - ./src/grafana/config.monitoring
+    user: "472"
+    image: grafana/grafana:latest
+    volumes:
+      - ./src/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana-data:/var/lib/grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    #   networks:
+    #     example-network:
+    #       ipv4_address: 172.16.238.12
+
+    # networks:
+    #   example-network:
+    #     name: ${NETWORK_NAME}
+    #     driver: bridge
+    #     ipam:
+    #       driver: default
+    #       config:
+    #         - subnet: 172.16.238.0/24

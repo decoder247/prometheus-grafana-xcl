@@ -20,5 +20,5 @@ if __name__ == "__main__":
 
     for i in range(len(X)):
         features = X.iloc[i].to_json()
-        r = requests.post("http://localhost:5000/predict/model", data=features)
+        r = requests.post("http://localhost:8082/predict/model", data=features)
         logger.info(f"instance: {i}, prediction: {r.json()}")

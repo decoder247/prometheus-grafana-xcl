@@ -3,7 +3,7 @@ import requests
 from loguru import logger
 
 
-URL = "http://0.0.0.0:5000/predict/random"
+URL = "http://0.0.0.0:8082/predict/random"
 
 
 async def concurrent():  # FIXME: RuntimeWarning: coroutine 'concurrent' was never awaited concurrent()
